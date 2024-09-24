@@ -1,16 +1,5 @@
 ## install before run ##############
-# pip install flopth
-# pip install ptflops
-# pip install open3d
-# pip install tensorflow
-# pip install tensorflow==2.12.0
-# pip install yolov4
-# pip install timm
-# pip install pyopengl
-# conda install scikit-image
-# Install OpenCV without GUI support
-# pip install opencv-python-headless  
-# conda install pyqt
+
 
 import os
 os.environ['CUDA_VISIBLE_DEVICES'] = '1' 

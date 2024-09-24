@@ -1,0 +1,9 @@
+flopth
+ptflops
+open3d
+tensorflow==2.12.0
+timm
+pyopengl
+scikit-image
+opencv-python-headless  
+pyqt
