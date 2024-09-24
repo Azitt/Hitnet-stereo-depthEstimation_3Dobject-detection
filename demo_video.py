@@ -117,8 +117,6 @@ def demo():
 
         timing_stats.add_time(elapsed_time_d)
 
-
-        # print("disparity_map: {}".format(len(disparity_map)))
         disparity_left = disparity_map
         
         calib_params = get_calibration_parameters(calib_file)
@@ -134,7 +132,7 @@ def demo():
         # expected baseline=0.54, focallength=1.003556e+3 ###################
         print(baseline,focal_length)
      
-        # depth_map = calc_depth_map(disparity_map, k_left, t_left, t_right)
+
         depth_map = calc_depth_map(disparity_map, focal_length, baseline)
           
         if config.ARCHITECTURE == 'hitnet':   
@@ -145,10 +143,6 @@ def demo():
             disparity_map = (disparity_map - disparity_map.min()) / (disparity_map.max() - disparity_map.min()) * 255.0
             disp_vis = disparity_map.astype("uint8")
             color_depth = cv2.applyColorMap(disp_vis, cv2.COLORMAP_JET)
-            
-        
-        
-        # disparity_np = disparity_map.squeeze().cpu().numpy() if isinstance(disparity_map, torch.Tensor) else disparity_map
         
         
         depth_np = depth_map.detach().cpu().numpy() if isinstance(depth_map, torch.Tensor) else depth_map
