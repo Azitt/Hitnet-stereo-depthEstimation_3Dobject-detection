@@ -92,11 +92,11 @@ def demo():
 
     video_writer = None  
     #error calculator and timing##############################################################
-    # Usage example:
+  
     error_accumulator = {'sum_squared_error': 0.0, 'count': 0}
     # Initialize timing stats
     timing_stats = TimingStats()
-    count_outliers = 0
+
     for (imfile1, imfile2, calib_file,gt_disparity) in tqdm(list(zip(left_images, right_images, calib_files,gt_disparities))):
         img = cv2.imread(imfile1)
         
@@ -146,16 +146,9 @@ def demo():
         
         
         depth_np = depth_map.detach().cpu().numpy() if isinstance(depth_map, torch.Tensor) else depth_map
-        # print("depth_npppppppppp",np.squeeze(depth_np).shape)
-        # print("image.shape",img.shape)
-        # print(aaa)
-        
-        
         
         depth_list = find_distances(depth_map, pred_bboxes, img, method="center")
-        # print("depth_listtttt",depth_list)
-        
-        
+
         
         ### gt disparity ############################################
         gt_disparity = read_disparity(gt_disparity)
@@ -164,9 +157,7 @@ def demo():
         gt_color_depth = cv2.applyColorMap(cv2.convertScaleAbs(gt_disparity, alpha=0.01), cv2.COLORMAP_JET)
         
         gt_depth_list = find_distances(gt_depth_map, pred_bboxes, img, method="center")
-        print("gt_depth_listtttt",gt_depth_list)
-        
-        # print(aaa) 
+
         res = add_depth(depth_list, gt_depth_list, result, pred_bboxes,error_accumulator)
        
         
@@ -179,23 +170,19 @@ def demo():
         gt_resized = cv2.resize(gt_color_depth, (new_w // 2, new_h // 2))
         pred_resized = cv2.resize(color_depth, (new_w // 2, new_h // 2))
 
-        # Create a black canvas for the top part
+  
         top_part = np.zeros((new_h // 2, new_w, 3), dtype=np.uint8)
-
-        # Place gt_color_depth on the left side of the top part
         top_part[:, :new_w // 2] = gt_resized
-
-        # Place pred_color_depth on the right side of the top part
         top_part[:, new_w // 2:] = pred_resized
         
-        # Add labels to the depth maps
+
         cv2.putText(top_part, 'Ground Truth', (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
         cv2.putText(top_part, 'Predicted', (w//2 + 10, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
         
-        # Resize 'res' to match the width of top_part
+
         res_resized = cv2.resize(res, (new_w, res.shape[0]))
 
-        # Combine top_part with the resized res
+
         combined_image = np.vstack((top_part, res_resized))
         
         if config.SAVE_DISPARITY_OUTPUT:
@@ -209,97 +196,18 @@ def demo():
             
 
             ## 3D visualization ############################################### 
-            # output_dir = "output_images_withgt_noc0_center5_3d_cre" 
-            # os.makedirs(output_dir, exist_ok=True) 
-            # # output_path = os.path.join(output_dir, filename)
-            # principal_point = (img.shape[1] / 2, img.shape[0] / 2)  # Assuming center of image 
-            # try:   
-            #  visualization = visualize_and_save_3d_boxes(img, pred_bboxes, np.squeeze(depth_np), focal_length, principal_point)
-            #  if frame_size is None:
-            #     frame_size = (visualization.shape[1], visualization.shape[0])
-            #     video_writer = cv2.VideoWriter(video_path, fourcc, fps, frame_size)
+            principal_point = (img.shape[1] / 2, img.shape[0] / 2)  # Assuming center of image 
+            try:   
+             visualization = visualize_and_save_3d_boxes(img, pred_bboxes, np.squeeze(depth_np), focal_length, principal_point)
+             if frame_size is None:
+                frame_size = (visualization.shape[1], visualization.shape[0])
+                video_writer = cv2.VideoWriter(video_path, fourcc, fps, frame_size)
 
-            # #  for _ in range(frame_duration):
-            #  video_writer.write(visualization) 
-            # except Exception as e:
-            #  print(f"Error in visualize_and_save_3d_boxes: {e}") 
+            #  for _ in range(frame_duration):
+             video_writer.write(visualization) 
+            except Exception as e:
+             print(f"Error in visualize_and_save_3d_boxes: {e}") 
                        
-        if config.SHOW_3D_PROJECTION:
-            if init_open3d == False:
-                w = img.shape[1]
-                h = img.shape[0]
-                print("w:{}, h: {}".format(w, h))
-                print("kleft[0][0]: {}".format(k_left[0][0]))
-                print("kleft[1][2]: {}".format(k_left[1][1]))
-                print("kleft[1][2]: {}".format(k_left[0][2]))
-                print("kleft[1][2]: {}".format(k_left[1][2]))
-                print("kLeft: {}".format(k_left))
-
-                K = o3d.camera.PinholeCameraIntrinsic(width=w,
-                                                      height=h,
-                                                      fx=k_left[0, 0],
-                                                      fy=k_left[1, 1],
-                                                      cx=k_left[0][2],
-                                                      cy=k_left[1][2])
-                open3dVisualizer = Open3dVisualizer(K)
-                init_open3d = True
-            open3dVisualizer(img, depth_map * 1000)
-
-            o3d_screenshot_mat = open3dVisualizer.vis.capture_screen_float_buffer()
-            o3d_screenshot_mat = (255.0 * np.asarray(o3d_screenshot_mat)).astype(np.uint8)
-            o3d_screenshot_mat = cv2.cvtColor(o3d_screenshot_mat, cv2.COLOR_RGB2BGR)
-        if config.SAVE_POINT_CLOUD:
-            # Calculate depth-to-disparity
-            cam1 = k_left  # left image - P2
-            cam2 = k_right  # right image - P3
-
-            print("p_left: {}".format(p_left))
-            print("cam1:{}".format(cam1))
-
-            Tmat = np.array([0.54, 0., 0.])
-            Q = np.zeros((4, 4))
-            cv2.stereoRectify(cameraMatrix1=cam1, cameraMatrix2=cam2,
-                              distCoeffs1=0, distCoeffs2=0,
-                              imageSize=img.shape[:2],
-                              R=np.identity(3), T=Tmat,
-                              R1=None, R2=None,
-                              P1=None, P2=None, Q=Q)
-
-            print("Disparity To Depth")
-            print(Q)
-            print("disparity_left.shape: {}".format(disparity_left.shape))
-            print("disparity_left: {}".format(disparity_left))
-
-            points = cv2.reprojectImageTo3D(disparity_left.copy(), Q)
-            # reflect on x axis
-
-            reflect_matrix = np.identity(3)
-            reflect_matrix[0] *= -1
-            points = np.matmul(points, reflect_matrix)
-
-            img_left = cv2.imread(imfile1)
-            colors = cv2.cvtColor(img_left.copy(), cv2.COLOR_BGR2RGB)
-            print("colors.shape: {}".format(colors.shape))
-            disparity_left = cv2.resize(disparity_left, (colors.shape[1], colors.shape[0]))
-            points = cv2.resize(points, (colors.shape[1], colors.shape[0]))
-            print("points.shape: {}".format(points.shape))
-            print("After mod. disparity_left.shape: {}".format(disparity_left.shape))
-            # filter by min disparity
-            mask = disparity_left > disparity_left.min()
-            out_points = points[mask]
-            out_colors = colors[mask]
-
-            out_colors = out_colors.reshape(-1, 3)
-            path_ply = os.path.join("output/point_clouds/", config.ARCHITECTURE)
-            isExist = os.path.exists(path_ply)
-            if not isExist:
-                os.makedirs(path_ply)
-            print("path_ply: {}".format(path_ply))
-
-            file_name = path_ply + "/" +str(index) + ".ply"
-            print("file_name: {}".format(file_name))
-            write_ply(file_name, out_points, out_colors)
-            index = index + 1
         if config.SAVE_DISPARITY_OUTPUT:
             if cv2.waitKey(1) == ord('q'):
                 break
@@ -315,7 +223,6 @@ def demo():
     average_time = timing_stats.get_average_time()
     print(f"Average execution time for Disparity Estimation with {config.ARCHITECTURE}: {average_time:.2f} ms")
     print(f"Total frames processed: {timing_stats.frame_count}")
-    print("count_outliers",count_outliers)
 
 if __name__ == '__main__':
     demo()
