@@ -1,6 +1,3 @@
-## install before run ##############
-
-
 import os
 os.environ['CUDA_VISIBLE_DEVICES'] = '1' 
 import cv2
@@ -34,10 +31,6 @@ class TimingStats:
         if self.frame_count == 0:
             return 0
         return self.total_time / self.frame_count
-
-
-
-
 
 def demo():
     if config.PROFILE_FLAG:
